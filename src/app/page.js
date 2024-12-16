@@ -4,106 +4,101 @@ import { useState } from "react";
 
 export default function Home() {
   const [headerText, setHeaderText] = useState("");
-  const [result, setResult] = useState(null);
+  const [results, setResults] = useState(null);
   const [loading, setLoading] = useState(false);
 
   const analyzeHeader = async () => {
-    setResult(null); // Clear previous results
-    setLoading(true); // Show spinner
+    if (!headerText.trim()) {
+      alert("Please paste an email header to analyze.");
+      return;
+    }
+
+    setLoading(true);
+    setResults(null);
+
     try {
       const response = await fetch("/api/analyze-header", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ headerText }),
       });
+
       const data = await response.json();
-      setResult(data);
+      setResults(data);
     } catch (error) {
-      setResult({ error: "Failed to analyze header." });
+      console.error("Error analyzing header:", error.message);
+      setResults({ error: "Failed to analyze email header." });
     } finally {
-      setLoading(false); // Hide spinner
+      setLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen bg-gray-100 flex flex-col items-center py-10">
-      <h1 className="text-2xl font-bold mb-5">Email Header Analyzer</h1>
-      <textarea
-        className="w-full max-w-3xl h-60 p-4 border border-gray-300 rounded"
-        placeholder="Paste email header here..."
-        value={headerText}
-        onChange={(e) => setHeaderText(e.target.value)}
-      />
-      <button
-        className={`mt-4 bg-blue-500 text-white px-6 py-2 rounded flex items-center justify-center ${
-          loading ? "opacity-50 cursor-not-allowed" : "hover:bg-blue-600"
-        }`}
-        onClick={analyzeHeader}
-        disabled={loading}
-      >
-        {loading ? (
-          <>
-            <svg
-              className="animate-spin h-5 w-5 mr-2 text-white"
-              xmlns="http://www.w3.org/2000/svg"
-              fill="none"
-              viewBox="0 0 24 24"
-            >
-              <circle
-                className="opacity-25"
-                cx="12"
-                cy="12"
-                r="10"
-                stroke="currentColor"
-                strokeWidth="4"
-              ></circle>
-              <path
-                className="opacity-75"
-                fill="currentColor"
-                d="M4 12a8 8 0 018-8v4l-3.5 3.5L4 12zm1.5 5.5L9 14v4a8 8 0 01-8-8h4l3.5 3.5z"
-              ></path>
-            </svg>
-            Analyzing...
-          </>
-        ) : (
-          "Analyze Header"
-        )}
-      </button>
-      {result && (
-        <div className="mt-8 w-full max-w-3xl bg-white p-6 border border-gray-200 rounded shadow">
-          {result.error ? (
-            <p className="text-red-500">{result.error}</p>
-          ) : (
-            <>
-              <h2 className="text-xl font-semibold mb-4">Detailed Analysis</h2>
-              <div className="space-y-4">
-                <h3 className="font-semibold">Extracted IPs</h3>
-                <ul className="list-disc list-inside">
-                  {result.detailed_analysis.extractedIPs.map(
-                    (ipData, index) => (
-                      <li key={index}>
-                        IP: {ipData.ip} - Geolocation: {ipData.geolocation}
-                      </li>
-                    )
-                  )}
-                </ul>
-                <h3 className="font-semibold">Email Quality</h3>
-                <pre className="bg-gray-100 p-4 rounded">
-                  {JSON.stringify(result.detailed_analysis.email, null, 2)}
-                </pre>
-                <h3 className="font-semibold">Domain Reputation</h3>
-                <pre className="bg-gray-100 p-4 rounded">
-                  {JSON.stringify(result.detailed_analysis.domain, null, 2)}
-                </pre>
-                <h3 className="font-semibold">AI Analysis</h3>
-                <pre className="bg-gray-100 p-4 rounded text-sm overflow-auto">
-                  {result.detailed_analysis.aiAnalysis.details}
-                </pre>
-              </div>
-            </>
-          )}
+    <div className="min-h-screen bg-white text-gray-800 font-sans">
+      <div className="container mx-auto p-4 sm:p-6 md:p-8">
+        {/* Title */}
+        <h1 className="text-3xl sm:text-4xl font-bold text-center mb-6 text-gray-900">
+          Email Header Analyzer
+        </h1>
+
+        {/* Input Field */}
+        <textarea
+          className="w-full border border-gray-300 rounded-md p-3 text-sm sm:text-base text-gray-800 bg-gray-50 focus:ring-2 focus:ring-blue-500 focus:outline-none"
+          rows="6"
+          placeholder="Paste your email header here..."
+          value={headerText}
+          onChange={(e) => setHeaderText(e.target.value)}
+        ></textarea>
+
+        {/* Analyze Button */}
+        <div className="flex justify-center mt-4">
+          <button
+            className="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded text-base flex items-center"
+            onClick={analyzeHeader}
+            disabled={loading}
+          >
+            {loading ? (
+              <svg
+                className="animate-spin h-5 w-5 mr-2 text-white"
+                xmlns="http://www.w3.org/2000/svg"
+                fill="none"
+                viewBox="0 0 24 24"
+              >
+                <circle
+                  className="opacity-25"
+                  cx="12"
+                  cy="12"
+                  r="10"
+                  stroke="currentColor"
+                  strokeWidth="4"
+                ></circle>
+                <path
+                  className="opacity-75"
+                  fill="currentColor"
+                  d="M4 12a8 8 0 018-8v8H4z"
+                ></path>
+              </svg>
+            ) : null}
+            {loading ? "Analyzing..." : "Analyze Header"}
+          </button>
         </div>
-      )}
+
+        {/* Results Section */}
+        {results && (
+          <div className="mt-6 bg-gray-100 p-4 rounded-md shadow-lg">
+            <h2 className="text-lg sm:text-xl font-semibold mb-4 text-gray-900">
+              Detailed Analysis
+            </h2>
+            {results.error ? (
+              <p className="text-red-600">{results.error}</p>
+            ) : (
+              <pre className="text-xs sm:text-sm overflow-auto text-gray-700 whitespace-pre-wrap">
+                {JSON.stringify(results, null, 2)}
+              </pre>
+            )}
+          </div>
+        )}
+      </div>
     </div>
   );
 }
